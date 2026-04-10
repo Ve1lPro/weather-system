@@ -1,8 +1,7 @@
-Django==4.2.7
+Django
 gunicorn
-requests
-dj-database-url
-psycopg2-binary
-whitenoise
-python-dotenv
 pandas
+apscheduler
+requests
+scikit-learn
+numpy
