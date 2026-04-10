@@ -1,30 +1,41 @@
 from django.apps import AppConfig
+import os
 
 class WeatherConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "weather"
 
     def ready(self):
-        """可选：runserver 时启动定时拉取任务（Windows/PyCharm 下也能用）。
-        如果你不想自动跑，把下面整个 ready() 内容注释掉即可。
-        """
-        import os
-        # 避免 Django 自动重载时重复启动
-        if os.environ.get("RUN_MAIN") != "true":
+        # 防止某些情况下重复启动调度器
+        if os.environ.get("SCHEDULER_STARTED") == "1":
             return
+        os.environ["SCHEDULER_STARTED"] = "1"
 
         try:
             from apscheduler.schedulers.background import BackgroundScheduler
             from django.core.management import call_command
-        except Exception:
+        except Exception as e:
+            print("导入调度器失败：", e)
             return
 
-        scheduler = BackgroundScheduler(timezone="Asia/Shanghai")
-        scheduler.add_job(
-            lambda: call_command("fetch_weather", "--analyze", "--horizon", "12"),
-            trigger="interval",
-            minutes=30,
-            id="fetch_weather_job",
-            replace_existing=True,
-        )
-        scheduler.start()
+        # 先启动时立刻抓一次数据
+        try:
+            call_command("fetch_weather", "--analyze", "--horizon", "12")
+            print("启动时已执行 fetch_weather")
+        except Exception as e:
+            print("启动时抓取天气失败：", e)
+
+        # 再启动定时任务
+        try:
+            scheduler = BackgroundScheduler(timezone="Asia/Shanghai")
+            scheduler.add_job(
+                lambda: call_command("fetch_weather", "--analyze", "--horizon", "12"),
+                trigger="interval",
+                minutes=30,
+                id="fetch_weather_job",
+                replace_existing=True,
+            )
+            scheduler.start()
+            print("✅ APScheduler 已启动，每30分钟执行一次 fetch_weather")
+        except Exception as e:
+            print("启动定时任务失败：", e)
