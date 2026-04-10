@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>基于AI的城市天气数据分析与可视化系统</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root{
+      --bg:#f3f7fc;
+      --card:#ffffff;
+      --line:#d9e3f0;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#1d4ed8;
+      --primary-2:#3b82f6;
+      --shadow:0 10px 24px rgba(29,78,216,.08);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;
+      background:linear-gradient(180deg,#eef5ff 0%, #f7fbff 35%, #f3f7fc 100%);
+      color:var(--text);
+    }
+
+    .container{
+      max-width:1320px;
+      margin:0 auto;
+      padding:22px;
+    }
+
+    .hero{
+      background:linear-gradient(135deg,#1d4ed8 0%, #2563eb 45%, #60a5fa 100%);
+      color:#fff;
+      border-radius:22px;
+      padding:26px 30px;
+      box-shadow:0 16px 36px rgba(37,99,235,.22);
+      margin-bottom:14px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      right:-60px;
+      top:-60px;
+      width:220px;
+      height:220px;
+      background:rgba(255,255,255,.10);
+      border-radius:50%;
+    }
+
+    .hero h1{
+      margin:0;
+      font-size:34px;
+      font-weight:700;
+      letter-spacing:.5px;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero p{
+      margin:12px 0 0 0;
+      font-size:15px;
+      color:rgba(255,255,255,.92);
+      position:relative;
+      z-index:1;
+      line-height:1.7;
+    }
+
+    .system-bar{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .system-item{
+      flex:1;
+      min-width:220px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 16px;
+      box-shadow:0 6px 16px rgba(15,23,42,.05);
+    }
+
+    .system-item .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .system-item .value{
+      font-size:15px;
+      font-weight:700;
+      color:#0b3a84;
+    }
+
+    .panel,
+    .chart-card,
+    .kpi-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .panel{
+      padding:18px;
+      margin-bottom:18px;
+    }
+
+    .panel-title{
+      font-size:18px;
+      font-weight:700;
+      margin-bottom:14px;
+      color:#0b3a84;
+    }
+
+    .control-grid{
+      display:grid;
+      grid-template-columns:260px repeat(4, 1fr) 150px;
+      gap:14px;
+      align-items:end;
+    }
+
+    .field label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:7px;
+      font-weight:600;
+    }
+
+    select, button{
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:12px;
+      padding:11px 12px;
+      font-size:14px;
+      background:#fff;
+      color:var(--text);
+      transition:.2s;
+    }
+
+    select:focus, button:focus{
+      outline:none;
+      border-color:#60a5fa;
+      box-shadow:0 0 0 3px rgba(96,165,250,.16);
+    }
+
+    select[multiple]{
+      height:118px;
+    }
+
+    button{
+      background:linear-gradient(135deg,var(--primary),var(--primary-2));
+      color:#fff;
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(37,99,235,.18);
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      opacity:.96;
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:16px;
+      margin-bottom:18px;
+    }
+
+    .kpi-card{
+      padding:18px 18px 16px 18px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .kpi-card::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:0;
+      width:100%;
+      height:5px;
+      background:linear-gradient(90deg,#2563eb,#60a5fa);
+    }
+
+    .kpi-title{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:10px;
+      font-weight:600;
+    }
+
+    .kpi-value{
+      font-size:34px;
+      font-weight:800;
+      color:#0b3a84;
+      margin-bottom:8px;
+      line-height:1.1;
+    }
+
+    .kpi-unit{
+      font-size:16px;
+      font-weight:600;
+      color:#2563eb;
+      margin-left:4px;
+    }
+
+    .kpi-sub{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+
+    .chart-card{
+      padding:18px;
+      margin-bottom:18px;
+    }
+
+    .chart-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:12px;
+      gap:12px;
+    }
+
+    .chart-title{
+      font-size:18px;
+      font-weight:700;
+      color:#0b3a84;
+    }
+
+    .chart-desc{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .data-note{
+      margin-bottom:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.7;
+      background:#f8fbff;
+      border:1px dashed #cfe0f6;
+      border-radius:12px;
+      padding:10px 12px;
+    }
+
+    #chartLine{
+      width:100%;
+      height:500px;
+    }
+
+    #chartHeat{
+      width:100%;
+      height:440px;
+    }
+
+    .footer-tip{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      padding:12px 18px 10px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 6px 16px rgba(15,23,42,.05);
+      line-height:1.8;
+      margin-bottom:8px;
+    }
+
+    @media (max-width:1100px){
+      .control-grid{
+        grid-template-columns:1fr 1fr;
+      }
+      .kpi-grid{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media (max-width:700px){
+      .control-grid{
+        grid-template-columns:1fr;
+      }
+      .kpi-grid{
+        grid-template-columns:1fr;
+      }
+      .hero h1{
+        font-size:26px;
+      }
+      .system-item{
+        min-width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="hero">
+      <h1>基于AI的城市天气数据分析与可视化系统</h1>
+      <p>本系统面向城市天气数据分析场景，支持多城市天气采集、趋势分析、相关性分析和温度预测展示。用户可以通过在线网页查看主要天气指标变化和模型分析结果。</p>
+    </div>
+
+    <div class="system-bar">
+      <div class="system-item">
+        <div class="label">系统状态</div>
+        <div class="value">正常运行</div>
+      </div>
+      <div class="system-item">
+        <div class="label">数据来源</div>
+        <div class="value">和风天气 API</div>
+      </div>
+      <div class="system-item">
+        <div class="label">当前模型</div>
+        <div class="value">随机森林</div>
+      </div>
+      <div class="system-item">
+        <div class="label">访问方式</div>
+        <div class="value">在线网页系统</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">控制面板</div>
+      <div class="control-grid">
+        <div class="field">
+          <label>多城市选择（Ctrl/Shift 多选）</label>
+          <select id="cities" multiple></select>
+        </div>
+
+        <div class="field">
+          <label>指标选择</label>
+          <select id="metric">
+            <option value="temp" selected>温度</option>
+            <option value="humidity">湿度</option>
+            <option value="precip">降水</option>
+            <option value="wind">风速</option>
+            <option value="pressure">气压</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>相关性城市</label>
+          <select id="corrCity"></select>
+        </div>
+
+        <div class="field">
+          <label>历史点数</label>
+          <select id="limit">
+            <option value="120">120（约5天）</option>
+            <option value="240" selected>240（约10天）</option>
+            <option value="480">480（约20天）</option>
+            <option value="720">720（约30天）</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>当前模型</label>
+          <select id="modelView" disabled>
+            <option selected>随机森林</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="refresh">刷新图表</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">预测误差 MAE（温度）</div>
+        <div class="kpi-value"><span id="kpiMae">-</span><span class="kpi-unit">℃</span></div>
+        <div class="kpi-sub" id="kpiMaeHint">等待加载</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">预测误差 RMSE（温度）</div>
+        <div class="kpi-value"><span id="kpiRmse">-</span><span class="kpi-unit">℃</span></div>
+        <div class="kpi-sub" id="kpiRmseHint">等待加载</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">数据状态</div>
+        <div class="kpi-value" id="dataCount">-</div>
+        <div class="kpi-sub" id="dataStatus">未加载数据</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">系统信息</div>
+        <div class="kpi-value" id="currentCity">-</div>
+        <div class="kpi-sub" id="lastRefresh">最后刷新：-</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">最高温城市</div>
+        <div class="kpi-value" id="rankHotCity">-</div>
+        <div class="kpi-sub" id="rankHotValue">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">最低温城市</div>
+        <div class="kpi-value" id="rankColdCity">-</div>
+        <div class="kpi-sub" id="rankColdValue">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">最高湿度城市</div>
+        <div class="kpi-value" id="rankHumCity">-</div>
+        <div class="kpi-sub" id="rankHumValue">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">当前分析城市</div>
+        <div class="kpi-value" id="analysisCityCard">-</div>
+        <div class="kpi-sub">用于热力图与模型评估</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <div class="chart-title">多城市天气趋势图</div>
+        <div class="chart-desc" id="lineHint">展示不同城市天气指标的变化趋势</div>
+      </div>
+      <div class="data-note">数据说明：该图展示多个城市在相同时间窗口内的天气变化过程，便于进行横向对比和趋势观察。</div>
+      <div id="chartLine"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <div class="chart-title">天气指标相关性热力图</div>
+        <div class="chart-desc" id="heatHint">展示温度、湿度、风速、气压等指标间的相关关系</div>
+      </div>
+      <div class="data-note">分析说明：该图用于展示主要天气指标之间的相关关系，颜色深浅可以反映相关性的强弱。</div>
+      <div id="chartHeat"></div>
+    </div>
+
+    <div class="footer-tip">
+      系统说明：本系统通过调用天气接口获取多城市天气数据，并结合随机森林模型完成温度预测与误差展示。用户可以通过前端页面查看天气趋势、相关性分析和城市天气排行结果。
+    </div>
+  </div>
+
+  <script>
+    window.DEFAULT_CITY = "{{ default_city }}";
+  </script>
+  <script src="/static/weather/main.js?v=4"></script>
+</body>
+</html>
