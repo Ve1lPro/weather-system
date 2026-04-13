@@ -97,6 +97,15 @@ async function init() {
   const rankHumValue = document.getElementById("rankHumValue");
   const analysisCityCard = document.getElementById("analysisCityCard");
 
+  const avgTemp = document.getElementById("avgTemp");
+  const avgTempHint = document.getElementById("avgTempHint");
+  const maxTemp = document.getElementById("maxTemp");
+  const minTempHint = document.getElementById("minTempHint");
+  const trendLabel = document.getElementById("trendLabel");
+  const trendHint = document.getElementById("trendHint");
+  const avgHumidity = document.getElementById("avgHumidity");
+  const summaryCityHint = document.getElementById("summaryCityHint");
+
   const lineChart = echarts.init(document.getElementById("chartLine"));
   const heatChart = echarts.init(document.getElementById("chartHeat"));
 
@@ -191,6 +200,34 @@ async function init() {
     }
   }
 
+
+  async function refreshSummary() {
+    const city = corrSel.value;
+    const limit = limitSel.value;
+
+    try {
+      const summary = await getJSON(`/api/summary?city=${encodeURIComponent(city)}&limit=${encodeURIComponent(limit)}`);
+      avgTemp.textContent = summary.avg_temp ?? "-";
+      avgTempHint.textContent = `数据量：${summary.total_records} 条 ｜ 最新温度：${summary.latest_temp ?? "-"} ℃`;
+      maxTemp.textContent = summary.max_temp ?? "-";
+      minTempHint.textContent = `最低温：${summary.min_temp ?? "-"} ℃`;
+      trendLabel.textContent = summary.trend_label || "-";
+      trendHint.textContent = summary.trend_delta === null ? "根据最近 6 个时间点判断" : `近 6 个点均值变化：${summary.trend_delta} ℃`;
+      avgHumidity.textContent = summary.avg_humidity ?? "-";
+      summaryCityHint.textContent = `当前统计城市：${summary.city}`;
+    } catch (e) {
+      console.error("refreshSummary error:", e);
+      avgTemp.textContent = "-";
+      avgTempHint.textContent = "暂无统计数据";
+      maxTemp.textContent = "-";
+      minTempHint.textContent = "最低温：-";
+      trendLabel.textContent = "-";
+      trendHint.textContent = "趋势判断失败";
+      avgHumidity.textContent = "-";
+      summaryCityHint.textContent = "当前统计城市：-";
+    }
+  }
+
   async function refreshRank() {
     try {
       const rank = await getJSON("/api/rank");
@@ -236,6 +273,7 @@ async function init() {
     try {
       await refreshLine();
       await refreshCorrAndEval();
+      await refreshSummary();
       await refreshRank();
       lastRefresh.textContent = `最后刷新：${new Date().toLocaleString()}`;
     } catch (e) {
@@ -250,7 +288,10 @@ async function init() {
   btn.addEventListener("click", refreshAll);
   metricSel.addEventListener("change", refreshLine);
   citiesSel.addEventListener("change", refreshLine);
-  corrSel.addEventListener("change", refreshCorrAndEval);
+  corrSel.addEventListener("change", async () => {
+    await refreshCorrAndEval();
+    await refreshSummary();
+  });
   limitSel.addEventListener("change", refreshAll);
 
   await refreshAll();

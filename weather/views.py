@@ -256,3 +256,75 @@ def api_table(request):
         "city": city.name,
         "rows": data,
     })
+
+def _calc_temp_trend(values):
+    clean = [float(v) for v in values if v is not None]
+    if len(clean) < 3:
+        return {"label": "数据不足", "delta": None}
+
+    half = max(1, len(clean) // 2)
+    early_avg = sum(clean[:half]) / len(clean[:half])
+    late_avg = sum(clean[half:]) / len(clean[half:])
+    delta = round(late_avg - early_avg, 2)
+
+    if delta >= 1:
+        label = "上升"
+    elif delta <= -1:
+        label = "下降"
+    else:
+        label = "平稳"
+    return {"label": label, "delta": delta}
+
+
+def api_summary(request):
+    """
+    城市概览接口
+    GET /api/summary?city=重庆&limit=240
+    返回数据量、均温、历史极值、趋势判断等摘要信息
+    """
+    city_name = request.GET.get("city") or settings.DEFAULT_CITY_NAME
+    limit = int(request.GET.get("limit", "240"))
+
+    city = City.objects.filter(name=city_name).first()
+    if not city:
+        return JsonResponse({"error": "city not found"}, status=404)
+
+    latest = (
+        WeatherRecord.objects.filter(city=city)
+        .order_by("-obs_time")
+        .values("obs_time", "temp_c", "humidity")
+        .first()
+    )
+    if not latest:
+        return JsonResponse({"error": "no data"}, status=400)
+
+    recent_rows = list(
+        WeatherRecord.objects.filter(city=city)
+        .order_by("-obs_time")[:limit]
+        .values("obs_time", "temp_c", "humidity")
+    )
+    recent_rows = list(reversed(recent_rows))
+
+    total_records = WeatherRecord.objects.filter(city=city).count()
+    valid_temps = [r["temp_c"] for r in recent_rows if r["temp_c"] is not None]
+    valid_humidity = [r["humidity"] for r in recent_rows if r["humidity"] is not None]
+
+    avg_temp = round(sum(valid_temps) / len(valid_temps), 2) if valid_temps else None
+    max_temp = round(max(valid_temps), 2) if valid_temps else None
+    min_temp = round(min(valid_temps), 2) if valid_temps else None
+    avg_humidity = round(sum(valid_humidity) / len(valid_humidity), 2) if valid_humidity else None
+
+    trend = _calc_temp_trend(valid_temps[-6:])
+
+    return JsonResponse({
+        "city": city.name,
+        "total_records": total_records,
+        "latest_time": latest["obs_time"].isoformat() if latest["obs_time"] else "",
+        "latest_temp": latest["temp_c"],
+        "avg_temp": avg_temp,
+        "max_temp": max_temp,
+        "min_temp": min_temp,
+        "avg_humidity": avg_humidity,
+        "trend_label": trend["label"],
+        "trend_delta": trend["delta"],
+    })

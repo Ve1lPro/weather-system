@@ -433,6 +433,33 @@
       </div>
     </div>
 
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">平均温度</div>
+        <div class="kpi-value"><span id="avgTemp">-</span><span class="kpi-unit">℃</span></div>
+        <div class="kpi-sub" id="avgTempHint">最近时间窗口统计</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">历史最高 / 最低温</div>
+        <div class="kpi-value"><span id="maxTemp">-</span><span class="kpi-unit">℃</span></div>
+        <div class="kpi-sub" id="minTempHint">最低温：-</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">温度趋势判断</div>
+        <div class="kpi-value" id="trendLabel">-</div>
+        <div class="kpi-sub" id="trendHint">根据最近 6 个时间点判断</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">平均湿度</div>
+        <div class="kpi-value"><span id="avgHumidity">-</span><span class="kpi-unit">%</span></div>
+        <div class="kpi-sub" id="summaryCityHint">当前统计城市：-</div>
+      </div>
+    </div>
+
     <div class="chart-card">
       <div class="chart-head">
         <div class="chart-title">多城市天气趋势图</div>
@@ -459,6 +486,6 @@
   <script>
     window.DEFAULT_CITY = "{{ default_city }}";
   </script>
-  <script src="/static/weather/main.js?v=4"></script>
+  <script src="/static/weather/main.js?v=5"></script>
 </body>
 </html>
