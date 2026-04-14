@@ -13,7 +13,7 @@ METRIC_MAP = {
 
 
 def dashboard(request):
-    return render(request, "weather/dashboard.html", {"default_city": settings.DEFAULT_CITY_NAME})
+    return render(request, "dashboard.html", {"default_city": settings.DEFAULT_CITY_NAME})
 
 
 def api_cities(request):

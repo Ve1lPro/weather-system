@@ -1,3 +1,6 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-cn">
 <!doctype html>
 <html lang="zh-cn">
 <head>
@@ -137,7 +140,7 @@
       font-weight:600;
     }
 
-    select, button{
+    select, button, input[type="text"]{
       width:100%;
       border:1px solid #cbd5e1;
       border-radius:12px;
@@ -148,7 +151,7 @@
       transition:.2s;
     }
 
-    select:focus, button:focus{
+    select:focus, button:focus, input[type="text"]:focus{
       outline:none;
       border-color:#60a5fa;
       box-shadow:0 0 0 3px rgba(96,165,250,.16);
@@ -171,6 +174,34 @@
       transform:translateY(-1px);
       opacity:.96;
     }
+    .toolbar-row{
+      display:grid;
+      grid-template-columns:1fr 120px 120px;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .ghost-btn{
+      background:#fff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+      box-shadow:none;
+    }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      color:#0b3a84;
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+      border-radius:999px;
+      padding:4px 10px;
+      margin-top:8px;
+    }
+
+
 
     .kpi-grid{
       display:grid;
@@ -303,6 +334,9 @@
       .system-item{
         min-width:100%;
       }
+      .toolbar-row{
+        grid-template-columns:1fr;
+      }
     }
   </style>
 </head>
@@ -335,10 +369,16 @@
 
     <div class="panel">
       <div class="panel-title">控制面板</div>
+      <div class="toolbar-row">
+        <input id="cityKeyword" type="text" placeholder="输入城市关键字（如：北、上、深）进行筛选"/>
+        <button id="selectAllCities" class="ghost-btn">筛选全选</button>
+        <button id="clearCities" class="ghost-btn">清空选择</button>
+      </div>
       <div class="control-grid">
         <div class="field">
           <label>多城市选择（Ctrl/Shift 多选）</label>
           <select id="cities" multiple></select>
+          <div class="status-pill" id="citySelectionInfo">已选 0 个城市</div>
         </div>
 
         <div class="field">
@@ -486,6 +526,6 @@
   <script>
     window.DEFAULT_CITY = "{{ default_city }}";
   </script>
-  <script src="/static/weather/main.js?v=5"></script>
+<script src="{% static 'main.js' %}?v=6"></script>
 </body>
 </html>

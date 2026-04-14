@@ -76,6 +76,11 @@ async function init() {
   const limitSel = document.getElementById("limit");
   const btn = document.getElementById("refresh");
 
+  const cityKeywordInput = document.getElementById("cityKeyword");
+  const selectAllCitiesBtn = document.getElementById("selectAllCities");
+  const clearCitiesBtn = document.getElementById("clearCities");
+  const citySelectionInfo = document.getElementById("citySelectionInfo");
+
   const lineHint = document.getElementById("lineHint");
   const heatHint = document.getElementById("heatHint");
 
@@ -110,11 +115,13 @@ async function init() {
   const heatChart = echarts.init(document.getElementById("chartHeat"));
 
   const cities = await getJSON("/api/cities");
+  let allCityNames = [];
 
   citiesSel.innerHTML = "";
   corrSel.innerHTML = "";
 
   for (const c of cities.cities) {
+    allCityNames.push(c.name);
     const o1 = document.createElement("option");
     o1.value = c.name;
     o1.textContent = c.name;
@@ -134,6 +141,19 @@ async function init() {
   corrSel.value = defaultCity;
   currentCity.textContent = defaultCity;
   analysisCityCard.textContent = defaultCity;
+
+  function updateCitySelectionInfo() {
+    const picked = selectedValues(citiesSel);
+    citySelectionInfo.textContent = `已选 ${picked.length} 个城市`;
+  }
+
+  function applyCityFilter() {
+    const keyword = cityKeywordInput.value.trim();
+    Array.from(citiesSel.options).forEach(opt => {
+      const visible = keyword === "" || opt.value.includes(keyword);
+      opt.hidden = !visible;
+    });
+  }
 
   async function refreshLine() {
     const picked = selectedValues(citiesSel);
@@ -165,7 +185,7 @@ async function init() {
     dataCount.textContent = count;
     dataStatus.textContent = `最新时间：${lastTime}`;
     lineHint.textContent = `当前展示城市：${picked.join("、")} ｜ 指标：${metricSel.options[metricSel.selectedIndex].text}`;
-
+    updateCitySelectionInfo();
     return payloadLine;
   }
 
@@ -287,14 +307,40 @@ async function init() {
 
   btn.addEventListener("click", refreshAll);
   metricSel.addEventListener("change", refreshLine);
-  citiesSel.addEventListener("change", refreshLine);
+  citiesSel.addEventListener("change", async () => {
+    updateCitySelectionInfo();
+    await refreshLine();
+  });
+
   corrSel.addEventListener("change", async () => {
     await refreshCorrAndEval();
     await refreshSummary();
   });
   limitSel.addEventListener("change", refreshAll);
+  cityKeywordInput.addEventListener("input", applyCityFilter);
+
+  selectAllCitiesBtn.addEventListener("click", async () => {
+    Array.from(citiesSel.options).forEach(opt => {
+      if (!opt.hidden) opt.selected = true;
+    });
+    updateCitySelectionInfo();
+    await refreshLine();
+  });
+
+  clearCitiesBtn.addEventListener("click", () => {
+    Array.from(citiesSel.options).forEach(opt => {
+      opt.selected = false;
+    });
+    updateCitySelectionInfo();
+  });
+
+  allCityNames = Array.from(new Set(allCityNames));
+  if (allCityNames.length > 0) {
+    cityKeywordInput.placeholder = `可筛选 ${allCityNames.length} 个城市（例如：${allCityNames[0]}）`;
+  }
 
   await refreshAll();
+  updateCitySelectionInfo();
 
   window.addEventListener("resize", () => {
     lineChart.resize();

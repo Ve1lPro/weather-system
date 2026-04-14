@@ -15,7 +15,7 @@ class QWeatherClient:
         url = self.host.rstrip("/") + path
 
         headers = {
-            "X-QW-Api-Key": self.api_key,   # ✅ 按你控制台要求放请求头
+            "X-QW-Api-Key": self.api_key,   # 按你控制台要求放请求头
         }
 
         r = requests.get(url, params=params, headers=headers, timeout=self.timeout)
